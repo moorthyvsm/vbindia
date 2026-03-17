@@ -4,7 +4,7 @@ A clean, dark-themed web dashboard that tracks **US Employment-Based Visa Bullet
 
 Displays both **Final Action Dates (Table A)** and **Dates for Filing (Table B)** with an interactive chart and full monthly data table.
 
-![India Visa Bulletin Tracker](https://img.shields.io/badge/Data-travel.state.gov-blue) ![Static](https://img.shields.io/badge/Type-Static%20HTML-green)
+![India Visa Bulletin Tracker](https://img.shields.io/badge/Data-travel.state.gov-blue) ![Static](https://img.shields.io/badge/Type-Static%20HTML-green) ![Docker](https://img.shields.io/badge/Docker-nginx%3Aalpine-2496ED?logo=docker&logoColor=white)
 
 ---
 
@@ -72,7 +72,66 @@ php -S localhost:8080
 
 ---
 
-### Option 4 — Deploy to a server / VPS
+### Option 4 — Docker 🐳
+
+**Requirements:** [Docker](https://docs.docker.com/get-docker/) (Desktop or Engine)
+
+The image is built on `nginx:alpine` (~8 MB) and serves on port **8080**.
+
+#### Quick start
+
+```bash
+git clone https://github.com/moorthyvsm/vbindia.git
+cd vbindia
+
+# Build and run
+docker build -t vbindia .
+docker run -d -p 8080:8080 --name vbindia vbindia
+```
+
+Then open: **http://localhost:8080**
+
+#### Using Docker Compose (recommended)
+
+```bash
+docker compose up -d          # build + start in background
+docker compose down           # stop and remove
+docker compose up -d --build  # rebuild after updating index.html
+```
+
+#### Useful commands
+
+```bash
+docker logs vbindia           # view nginx access logs
+docker stats vbindia          # memory / CPU usage
+docker exec -it vbindia sh    # shell into the container
+```
+
+#### Run on a different port
+
+```bash
+docker run -d -p 3000:8080 --name vbindia vbindia
+# Now accessible at http://localhost:3000
+```
+
+#### Deploy to a VPS / cloud
+
+```bash
+# Build and tag for a registry
+docker build -t ghcr.io/<your-user>/vbindia:latest .
+docker push ghcr.io/<your-user>/vbindia:latest
+
+# Pull and run on your server
+docker pull ghcr.io/<your-user>/vbindia:latest
+docker run -d -p 80:8080 --restart unless-stopped --name vbindia \
+  ghcr.io/<your-user>/vbindia:latest
+```
+
+> The container runs nginx as a **non-root user** and includes a health check.
+
+---
+
+### Option 5 — Deploy to a server / VPS (without Docker)
 
 Upload just `index.html` (and optionally `serve.py`) to any server and serve it with Nginx, Apache, or Caddy — it's a single HTML file.
 
@@ -90,6 +149,8 @@ server {
 **GitHub Pages / Netlify / Vercel:**
 
 Push the repo to GitHub and enable GitHub Pages (`Settings → Pages → Deploy from branch → main`). No build step needed.
+
+> For containerized cloud deployments (AWS ECS, GCP Cloud Run, Railway, Fly.io), use the Docker option above.
 
 ---
 
@@ -136,6 +197,7 @@ Official source: [travel.state.gov/visa-bulletin](https://travel.state.gov/conte
 | Charts | [Chart.js 4.4](https://www.chartjs.org/) via CDN |
 | Styles | Plain CSS (no framework) |
 | Server (optional) | Python 3 `http.server` |
+| Container | nginx:alpine via Docker |
 
 ---
 

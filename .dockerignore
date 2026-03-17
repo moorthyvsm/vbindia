@@ -1,0 +1,9 @@
+.git
+.gitignore
+.claude
+serve.py
+README.md
+*.md
+.DS_Store
+__pycache__
+*.pyc

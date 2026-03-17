@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>India Visa Bulletin Tracker — EB1 / EB2 / EB3</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e8f0;
+      --muted: #718096;
+      --eb1: #60a5fa;
+      --eb2: #34d399;
+      --eb3: #f87171;
+      --accent: #818cf8;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 6px;
+    }
+
+    header a { color: var(--accent); text-decoration: none; }
+    header a:hover { text-decoration: underline; }
+
+    /* ── Toggle ── */
+    .toggle-wrap {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+
+    .toggle {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .toggle button {
+      padding: 7px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.18s;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .toggle button.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 1px 6px rgba(129,140,248,.35);
+    }
+
+    .toggle-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* ── Stat cards ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+      margin: 0 auto 32px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .card-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .card-dff {
+      font-size: 0.82rem;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .card-dff strong { color: var(--text); }
+
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    /* ── Chart ── */
+    .chart-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 1100px;
+      margin: 0 auto 32px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .chart-header h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 340px;
+    }
+
+    /* ── Table ── */
+    .table-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+      overflow-x: auto;
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .table-header h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      min-width: 680px;
+    }
+
+    thead tr.th-group th {
+      padding: 6px 16px 4px;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      border-bottom: none;
+      background: rgba(255,255,255,0.02);
+    }
+
+    thead tr.th-group th.group-fad {
+      color: #a3c4fc;
+      border-bottom: 2px solid rgba(96,165,250,.3);
+    }
+
+    thead tr.th-group th.group-dff {
+      color: #86efac;
+      border-bottom: 2px solid rgba(52,211,153,.3);
+    }
+
+    thead tr.th-cols th {
+      text-align: left;
+      padding: 8px 16px 10px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    tbody td {
+      padding: 10px 16px;
+      vertical-align: middle;
+    }
+
+    .mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.8rem; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+
+    .badge-eb1     { background: rgba(96,165,250,.15); color: var(--eb1); }
+    .badge-eb2     { background: rgba(52,211,153,.15); color: var(--eb2); }
+    .badge-eb3     { background: rgba(248,113,113,.15); color: var(--eb3); }
+    .badge-dff-eb1 { background: rgba(96,165,250,.08); color: #93b4e6; border: 1px solid rgba(96,165,250,.2); }
+    .badge-dff-eb2 { background: rgba(52,211,153,.08); color: #6ec9a0; border: 1px solid rgba(52,211,153,.2); }
+    .badge-dff-eb3 { background: rgba(248,113,113,.08); color: #d98080; border: 1px solid rgba(248,113,113,.2); }
+
+    .latest-row { background: rgba(129,140,248,.05); }
+
+    .sep-col { border-left: 1px solid var(--border); }
+
+    footer {
+      max-width: 1100px;
+      margin: 32px auto 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    .legend-dot {
+      display: inline-block;
+      width: 24px;
+      height: 3px;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .legend-dot.dashed {
+      background: repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🇮🇳 India Visa Bulletin Tracker</h1>
+  <p>
+    Employment-Based · EB-1, EB-2, EB-3 · Mar 2024 – Apr 2026 ·
+    Source: <a href="https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin.html" target="_blank">travel.state.gov</a>
+  </p>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<div class="chart-box">
+  <div class="chart-header">
+    <h2 id="chart-title">Priority Date Progression — Final Action Dates</h2>
+    <div class="toggle">
+      <button id="btn-fad" class="active" onclick="switchView('fad')">Final Action Dates</button>
+      <button id="btn-dff" onclick="switchView('dff')">Dates for Filing</button>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+  </div>
+</div>
+
+<div class="table-box">
+  <div class="table-header">
+    <h2>Monthly Data</h2>
+    <span style="font-size:0.78rem;color:var(--muted)">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.4);margin-right:4px;vertical-align:middle"></span>Final Action &nbsp;
+      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);margin-right:4px;vertical-align:middle"></span>Dates for Filing
+    </span>
+  </div>
+  <table>
+    <thead>
+      <tr class="th-group">
+        <th></th>
+        <th colspan="3" class="group-fad">Final Action Dates (Table A)</th>
+        <th colspan="3" class="group-dff sep-col">Dates for Filing (Table B)</th>
+      </tr>
+      <tr class="th-cols">
+        <th>Bulletin Month</th>
+        <th><span class="dot" style="background:var(--eb1)"></span>EB-1</th>
+        <th><span class="dot" style="background:var(--eb2)"></span>EB-2</th>
+        <th><span class="dot" style="background:var(--eb3)"></span>EB-3</th>
+        <th class="sep-col"><span class="dot" style="background:var(--eb1)"></span>EB-1</th>
+        <th><span class="dot" style="background:var(--eb2)"></span>EB-2</th>
+        <th><span class="dot" style="background:var(--eb3)"></span>EB-3</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<footer>
+  <p>
+    <strong>Final Action Dates (Table A)</strong>: visa can be issued if priority date is earlier than this. &nbsp;|&nbsp;
+    <strong>Dates for Filing (Table B)</strong>: application can be filed if USCIS authorizes use of this chart.
+  </p>
+  <p style="margin-top:6px">Last updated: April 2026 · <a href="https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin.html" target="_blank">View latest bulletin ↗</a></p>
+</footer>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+// Source: travel.state.gov — Table A (Final Action) & Table B (Dates for Filing)
+// India-born, Employment-Based — fetched via raw HTML parsing
+const bulletinData = [
+  { m:"Mar 2024", eb1:"2020-10-01",eb2:"2012-03-01",eb3:"2012-07-01", d1:"2021-01-01",d2:"2012-05-15",d3:"2012-08-01" },
+  { m:"Apr 2024", eb1:"2021-03-01",eb2:"2012-04-15",eb3:"2012-08-15", d1:"2021-04-01",d2:"2012-05-15",d3:"2012-09-15" },
+  { m:"May 2024", eb1:"2021-03-01",eb2:"2012-04-15",eb3:"2012-08-15", d1:"2021-04-01",d2:"2012-05-15",d3:"2012-09-15" },
+  { m:"Jun 2024", eb1:"2021-03-01",eb2:"2012-04-15",eb3:"2012-08-22", d1:"2021-04-01",d2:"2012-05-15",d3:"2012-09-15" },
+  { m:"Jul 2024", eb1:"2022-02-01",eb2:"2012-06-15",eb3:"2012-09-22", d1:"2022-02-08",d2:"2012-06-22",d3:"2012-10-01" },
+  { m:"Aug 2024", eb1:"2022-02-01",eb2:"2012-07-15",eb3:"2012-10-22", d1:"2022-02-08",d2:"2012-07-22",d3:"2012-11-01" },
+  { m:"Sep 2024", eb1:"2022-02-01",eb2:"2012-07-15",eb3:"2012-10-22", d1:"2022-02-08",d2:"2012-07-22",d3:"2012-11-01" },
+  { m:"Oct 2024", eb1:"2022-02-01",eb2:"2012-07-15",eb3:"2012-11-01", d1:"2022-04-15",d2:"2013-01-01",d3:"2013-06-08" },
+  { m:"Nov 2024", eb1:"2022-02-01",eb2:"2012-07-15",eb3:"2012-11-01", d1:"2022-04-15",d2:"2013-01-01",d3:"2013-06-08" },
+  { m:"Dec 2024", eb1:"2022-02-01",eb2:"2012-08-01",eb3:"2012-11-08", d1:"2022-04-15",d2:"2013-01-01",d3:"2013-06-08" },
+  { m:"Jan 2025", eb1:"2022-02-01",eb2:"2012-10-01",eb3:"2012-12-01", d1:"2022-04-15",d2:"2013-01-01",d3:"2013-06-08" },
+  { m:"Feb 2025", eb1:"2022-02-01",eb2:"2012-10-15",eb3:"2012-12-15", d1:"2022-04-15",d2:"2013-01-01",d3:"2013-06-08" },
+  { m:"Mar 2025", eb1:"2022-02-01",eb2:"2012-12-01",eb3:"2013-02-01", d1:"2022-04-15",d2:"2013-01-01",d3:"2013-06-08" },
+  { m:"Apr 2025", eb1:"2022-02-15",eb2:"2013-01-01",eb3:"2013-04-01", d1:"2022-04-15",d2:"2013-02-01",d3:"2013-06-08" },
+  { m:"May 2025", eb1:"2022-02-15",eb2:"2013-01-01",eb3:"2013-04-15", d1:"2022-04-15",d2:"2013-02-01",d3:"2013-06-08" },
+  { m:"Jun 2025", eb1:"2022-02-15",eb2:"2013-01-01",eb3:"2013-04-15", d1:"2022-04-15",d2:"2013-02-01",d3:"2013-06-08" },
+  { m:"Jul 2025", eb1:"2022-02-15",eb2:"2013-01-01",eb3:"2013-04-22", d1:"2022-04-15",d2:"2013-02-01",d3:"2013-06-08" },
+  { m:"Aug 2025", eb1:"2022-02-15",eb2:"2013-01-01",eb3:"2013-05-22", d1:"2022-04-15",d2:"2013-02-01",d3:"2013-06-08" },
+  { m:"Sep 2025", eb1:"2022-02-15",eb2:"2013-01-01",eb3:"2013-05-22", d1:"2022-04-15",d2:"2013-02-01",d3:"2013-06-08" },
+  { m:"Oct 2025", eb1:"2022-02-15",eb2:"2013-04-01",eb3:"2013-08-22", d1:"2023-04-15",d2:"2013-12-01",d3:"2014-08-15" },
+  { m:"Nov 2025", eb1:"2022-02-15",eb2:"2013-04-01",eb3:"2013-08-22", d1:"2023-04-15",d2:"2013-12-01",d3:"2014-08-15" },
+  { m:"Dec 2025", eb1:"2022-03-15",eb2:"2013-05-15",eb3:"2013-09-22", d1:"2023-04-15",d2:"2013-12-01",d3:"2014-08-15" },
+  { m:"Jan 2026", eb1:"2023-02-01",eb2:"2013-07-15",eb3:"2013-11-15", d1:"2023-08-01",d2:"2013-12-01",d3:"2014-08-15" },
+  { m:"Feb 2026", eb1:"2023-02-01",eb2:"2013-07-15",eb3:"2013-11-15", d1:"2023-08-01",d2:"2013-12-01",d3:"2014-08-15" },
+  { m:"Mar 2026", eb1:"2023-03-01",eb2:"2013-09-15",eb3:"2013-11-15", d1:"2023-12-01",d2:"2014-11-01",d3:"2014-08-15" },
+  { m:"Apr 2026", eb1:"2023-04-01",eb2:"2014-07-15",eb3:"2013-11-15", d1:"2023-12-01",d2:"2015-01-15",d3:"2015-01-15" },
+];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const TODAY = new Date("2026-04-01");
+
+function fmtDate(iso) {
+  if (!iso || iso === 'N/A') return '—';
+  const d = new Date(iso + "T00:00:00Z");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+function waitYears(iso) {
+  if (!iso || iso === 'N/A') return '—';
+  const d = new Date(iso + "T00:00:00Z");
+  const diff = (TODAY - d) / (1000 * 60 * 60 * 24 * 365.25);
+  return diff.toFixed(1) + " yrs";
+}
+
+function ts(iso) {
+  return new Date(iso + "T00:00:00Z").getTime();
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let activeView = 'fad'; // 'fad' or 'dff'
+
+// ─── STAT CARDS ───────────────────────────────────────────────────────────────
+const latest = bulletinData[bulletinData.length - 1];
+const categories = [
+  { fKey: "eb1", dKey: "d1", label: "EB-1 Priority Workers",          color: "var(--eb1)" },
+  { fKey: "eb2", dKey: "d2", label: "EB-2 Adv. Degree / Exceptional", color: "var(--eb2)" },
+  { fKey: "eb3", dKey: "d3", label: "EB-3 Skilled Workers",           color: "var(--eb3)" },
+];
+
+const statsEl = document.getElementById("stats");
+categories.forEach(cat => {
+  const fv = latest[cat.fKey];
+  const dv = latest[cat.dKey];
+  statsEl.innerHTML += `
+    <div class="card">
+      <div class="card-label"><span class="dot" style="background:${cat.color}"></span>${cat.label}</div>
+      <div class="card-value mono" id="cv-${cat.fKey}">${fmtDate(fv)}</div>
+      <div class="card-sub" id="cs-${cat.fKey}">Wait ≈ ${waitYears(fv)} · Final Action · Apr 2026</div>
+      <div class="card-dff">
+        <span style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em">Dates for Filing</span><br>
+        <strong id="cd-${cat.fKey}">${fmtDate(dv)}</strong>
+        <span id="cw-${cat.fKey}" style="color:var(--muted);font-size:.75rem"> · wait ≈ ${waitYears(dv)}</span>
+      </div>
+    </div>`;
+});
+
+// ─── TABLE ────────────────────────────────────────────────────────────────────
+const tbody = document.getElementById("tbody");
+[...bulletinData].reverse().forEach((row, i) => {
+  const isLatest = i === 0;
+  const latestBadge = isLatest
+    ? ' <span class="badge" style="background:rgba(129,140,248,.2);color:var(--accent);font-size:.65rem">latest</span>'
+    : '';
+  tbody.innerHTML += `
+    <tr class="${isLatest ? 'latest-row' : ''}">
+      <td><strong>${row.m}</strong>${latestBadge}</td>
+      <td class="mono"><span class="badge badge-eb1">${fmtDate(row.eb1)}</span></td>
+      <td class="mono"><span class="badge badge-eb2">${fmtDate(row.eb2)}</span></td>
+      <td class="mono"><span class="badge badge-eb3">${fmtDate(row.eb3)}</span></td>
+      <td class="mono sep-col"><span class="badge badge-dff-eb1">${fmtDate(row.d1)}</span></td>
+      <td class="mono"><span class="badge badge-dff-eb2">${fmtDate(row.d2)}</span></td>
+      <td class="mono"><span class="badge badge-dff-eb3">${fmtDate(row.d3)}</span></td>
+    </tr>`;
+});
+
+// ─── CHART ────────────────────────────────────────────────────────────────────
+const labels = bulletinData.map(r => r.m);
+
+function makeDatasets(view) {
+  const isFad = view === 'fad';
+  const opacity = isFad ? 1 : 0.7;
+  return [
+    { label: "EB-1", data: bulletinData.map(r => ts(isFad ? r.eb1 : r.d1)),
+      borderColor: "#60a5fa", backgroundColor: "rgba(96,165,250,.1)",
+      borderDash: isFad ? [] : [5,3],
+      tension: 0.35, fill: false, pointRadius: 3.5, pointHoverRadius: 6, borderWidth: 2 },
+    { label: "EB-2", data: bulletinData.map(r => ts(isFad ? r.eb2 : r.d2)),
+      borderColor: "#34d399", backgroundColor: "rgba(52,211,153,.1)",
+      borderDash: isFad ? [] : [5,3],
+      tension: 0.35, fill: false, pointRadius: 3.5, pointHoverRadius: 6, borderWidth: 2 },
+    { label: "EB-3", data: bulletinData.map(r => ts(isFad ? r.eb3 : r.d3)),
+      borderColor: "#f87171", backgroundColor: "rgba(248,113,113,.1)",
+      borderDash: isFad ? [] : [5,3],
+      tension: 0.35, fill: false, pointRadius: 3.5, pointHoverRadius: 6, borderWidth: 2 },
+  ];
+}
+
+const chart = new Chart(document.getElementById("chart"), {
+  type: "line",
+  data: { labels, datasets: makeDatasets('fad') },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: {
+        labels: { color: "#e2e8f0", font: { size: 12 }, padding: 20, usePointStyle: true, pointStyleWidth: 8 },
+      },
+      tooltip: {
+        backgroundColor: "#1a1d27",
+        borderColor: "#2a2d3a",
+        borderWidth: 1,
+        titleColor: "#e2e8f0",
+        bodyColor: "#a0aec0",
+        padding: 12,
+        callbacks: {
+          label(ctx) {
+            const d = new Date(ctx.parsed.y);
+            return ` ${ctx.dataset.label}: ${d.toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric", timeZone:"UTC" })}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: "#718096", font: { size: 11 }, maxRotation: 45 },
+        grid: { color: "rgba(255,255,255,0.05)" },
+      },
+      y: {
+        ticks: {
+          color: "#718096", font: { size: 11 },
+          callback(val) {
+            const d = new Date(val);
+            return d.toLocaleDateString("en-US", { month:"short", year:"numeric", timeZone:"UTC" });
+          },
+        },
+        grid: { color: "rgba(255,255,255,0.05)" },
+      },
+    },
+  },
+});
+
+// ─── TOGGLE ───────────────────────────────────────────────────────────────────
+function switchView(view) {
+  activeView = view;
+  document.getElementById('btn-fad').classList.toggle('active', view === 'fad');
+  document.getElementById('btn-dff').classList.toggle('active', view === 'dff');
+  document.getElementById('chart-title').textContent =
+    view === 'fad'
+      ? 'Priority Date Progression — Final Action Dates'
+      : 'Priority Date Progression — Dates for Filing';
+  chart.data.datasets = makeDatasets(view);
+  chart.update('active');
+}
+</script>
+</body>
+</html>
